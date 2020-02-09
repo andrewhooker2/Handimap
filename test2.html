@@ -140,32 +140,112 @@
     <input id="pac-input" class="controls" type="text" placeholder="Search Box">
     <div id="map"></div>
     <script>
-            console.log("script start");
+      console.log("script start");
 
-      // This example adds a search box to a map, using the Google Place Autocomplete
-      // feature. People can enter geographical searches. The search box will return a
-      // pick list containing a mix of places and predicted search terms.
-
-      // This example requires the Places library. Include the libraries=places
-      // parameter when you first load the API. For example:
-      // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
-
+//--------------------initilazation------------------
       function initAutocomplete() {
         var map = new google.maps.Map(document.getElementById('map'), {
           center: {lat: -33.8688, lng: 151.2195},
           zoom: 13,
           mapTypeId: 'roadmap'
         });
-
-        map.addListener('click', function() {
-        console.log("click");
-        if (event.placeId) {
-            console.log('You clicked on place:');
-            }
-        });
-
         
+        var marker;
+        var infowindow;
 
+//--------------------poi gtfo-------------------------
+        var noPoi = [
+      {
+        featureType: "poi",
+        elementType: "labels",
+
+        stylers: [
+          { visibility: "off" }
+                 ]   
+      }];
+    map.setOptions({styles: noPoi});
+
+//---------------------markers weeeee---------------------
+        google.maps.event.addListener(map, 'click', function(event) {
+          placeMarker(event.latLng);
+        });
+      
+      function placeMarker(location) {
+        if (!marker || !marker.setPosition) {
+          marker = new google.maps.Marker({
+            position: location,
+            map: map,
+          });
+        } else {
+          marker.setPosition(location);
+        }
+        if (!!infowindow && !!infowindow.close) {
+          infowindow.close();
+        }
+      }    
+        
+//-------------------Geocode 4 placeID and information-----------------
+        geocoder = new google.maps.Geocoder;
+        //keep a reference to the original setPosition-function
+        var fx = google.maps.InfoWindow.prototype.setPosition;
+
+  //override the built-in setPosition-method
+  google.maps.InfoWindow.prototype.setPosition = function() {
+
+    //this property isn't documented, but as it seems
+    //it's only defined for InfoWindows opened on POI's
+    if (this.logAsInternal) {
+      google.maps.event.addListenerOnce(this, 'map_changed', function() {
+        var map = this.getMap();
+
+        //the infoWindow will be opened, usually after a click on a POI
+        if (map) {
+
+          //trigger the click
+          google.maps.event.trigger(map, 'click', {
+            latLng: this.getPosition()
+          });
+        }
+      });
+    }
+    //call the original setPosition-method
+    fx.apply(this, arguments);
+  };
+
+  google.maps.event.addListener(map, 'click', function(e) {
+    //alert('clicked @' + e.latLng.toString())
+    geocoder.geocode({
+      'location': e.latLng
+    }, function(results, status) {
+      if (status === google.maps.GeocoderStatus.OK) {
+        if (results[0]) {
+
+          console.log('place id: ' + results[0].place_id);
+          var request = {
+          placeId: results[0].place_id,
+          fields: ['name']
+          };
+
+          service = new google.maps.places.PlacesService(map);
+          //getting those juicy deets
+          service.getDetails(request, callback);
+
+          function callback(place, status) {
+            if (status == google.maps.places.PlacesServiceStatus.OK) {
+              console.log(place.name);
+          }
+        }
+        } else {
+          console.log('No results found');
+        }
+      } else {
+        console.log('Geocoder failed due to: ' + status);
+      }
+    });
+
+  });
+        
+//----------------who clicks when you can search??--------------
         // Create the search box and link it to the UI element.
         var input = document.getElementById('pac-input');
         var searchBox = new google.maps.places.SearchBox(input);
@@ -224,6 +304,10 @@
           });
           map.fitBounds(bounds);
         });
+
+//-------------info window---------------
+
+
       }
 
     </script>
