@@ -63,6 +63,11 @@
           infowindow.setContent(place.name);
           infowindow.open(map, this);
         });
+        google.maps.event.addListener(marker, 'dblclick', function() 
+        {
+          infowindow.setContent("<h1>&#x1F468&#x200D&#x1F9AF &#x1F6BB  &#x1F9BB<h1>");
+          infowindow.open(map, this);
+        });
       }
     </script>
   </head>
