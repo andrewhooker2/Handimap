@@ -109,8 +109,14 @@
         });
 
         // Create the search box and link it to the UI element.
+
         var input = document.getElementById('pac-input');
         var searchBox = new google.maps.places.SearchBox(input);
+        var service;
+        var infowindow;
+
+        infowindow = new google.maps.InfoWindow();
+
         map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
 
         // Bias the SearchBox results towards current map's viewport.
@@ -149,13 +155,55 @@
               scaledSize: new google.maps.Size(25, 25)
             };
 
+
             // Create a marker for each place.
+
             markers.push(new google.maps.Marker({
               map: map,
               icon: icon,
               title: place.name,
               position: place.geometry.location
+              
+
             }));
+
+            // Andy's Code  -------------------------
+
+            service = new google.maps.places.PlacesService(map);
+
+            service.findPlaceFromQuery(request, function(results, status) 
+            {
+              if (status === google.maps.places.PlacesServiceStatus.OK) 
+              {
+                for (var i = 0; i < results.length; i++) 
+                {
+                  createMarker(results[i]);
+                }
+
+                map.setCenter(results[0].geometry.location);
+              }
+            });
+            
+
+            function createMarker(place) {
+            var marker = new google.maps.Marker({
+              map: map,
+              position: place.geometry.location
+            });
+
+            google.maps.event.addListener(marker, 'click', function() {
+              infowindow.setContent(place.name);
+              infowindow.open(map, this);
+            });
+            }
+
+
+
+
+
+
+            // =======================================
+
 
             if (place.geometry.viewport) {
               // Only geocodes have viewport.
